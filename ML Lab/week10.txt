@@ -1,0 +1,61 @@
+        Build Artificial Neural Network model with back propagation on a given dataset.
+
+import numpy as np
+import tensorflow as tf
+
+# Define the dataset (example)
+# Here we are using a simple XOR dataset
+X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=np.float32)
+y = np.array([[0], [1], [1], [0]], dtype=np.float32)
+
+# Define the neural network architecture
+# Here we'll create a simple 2-layer neural network
+class NeuralNetwork(tf.Module):
+    def __init__(self):
+        super(NeuralNetwork, self).__init__()
+        self.W1 = tf.Variable(tf.random.normal([2, 2]), name='weight1')
+        self.b1 = tf.Variable(tf.zeros([2]), name='bias1')
+        self.W2 = tf.Variable(tf.random.normal([2, 1]), name='weight2')
+        self.b2 = tf.Variable(tf.zeros([1]), name='bias2')
+
+    def __call__(self, x):
+        layer1 = tf.sigmoid(tf.add(tf.matmul(x, self.W1), self.b1))
+        output = tf.sigmoid(tf.add(tf.matmul(layer1, self.W2), self.b2))
+        return output
+
+# Define the loss function
+def loss(predicted_y, desired_y):
+    return tf.reduce_mean(tf.square(predicted_y - desired_y))
+
+# Define the training function (backpropagation)
+def train(model, inputs, outputs, learning_rate):
+    with tf.GradientTape() as t:
+        current_loss = loss(model(inputs), outputs)
+    dW1, db1, dW2, db2 = t.gradient(current_loss, [model.W1, model.b1, model.W2, model.b2])
+    model.W1.assign_sub(learning_rate * dW1)
+    model.b1.assign_sub(learning_rate * db1)
+    model.W2.assign_sub(learning_rate * dW2)
+    model.b2.assign_sub(learning_rate * db2)
+
+# Create an instance of the neural network
+model = NeuralNetwork()
+
+# Define hyperparameters
+learning_rate = 0.1
+epochs = 10000
+
+# Train the model
+for epoch in range(epochs):
+    train(model, X, y, learning_rate)
+
+    if epoch % 1000 == 0:
+        current_loss = loss(model(X), y)
+        print(f"Epoch {epoch}: Loss: {current_loss.numpy()}")
+
+# Test the model
+print("\nTesting model:")
+test_data = np.array([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=np.float32)
+predictions = model(test_data)
+for i, pred in enumerate(predictions):
+    print(f"Input: {test_data[i]}, Predicted Output: {pred.numpy()}")
+
